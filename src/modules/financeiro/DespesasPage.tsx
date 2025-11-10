@@ -103,7 +103,7 @@ export const DespesasPage: React.FC = () => {
     supabase
       .from('units')
       .select('id,name')
-      .then(({ data, error }) => {
+      .then(({ data, error }: { data: any; error: any }) => {
         if (error) {
           console.error('Erro ao carregar unidades:', error)
           return

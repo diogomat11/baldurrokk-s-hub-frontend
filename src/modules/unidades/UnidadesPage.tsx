@@ -3,12 +3,10 @@ import { useQuery } from '@tanstack/react-query'
 import { Plus, Search, Filter, MapPin, Phone, Mail, Building2 } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
-import { Badge, StatusBadge } from '@/components/ui/Badge'
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/Modal'
+import { Card, CardContent } from '@/components/ui/Card'
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/Modal'
 import { UnidadeCard } from '@/components/unidades/UnidadeCard'
 import { UnidadeForm } from '@/components/unidades/UnidadeForm'
-import { formatCurrency } from '@/lib/utils'
 import { PageLoading } from '@/components/ui/LoadingSpinner'
 import { getUnidades } from '@/services/unidades'
 
@@ -65,9 +63,14 @@ export const UnidadesPage: React.FC = () => {
     setUnidades(unidades.filter(u => u.id !== id))
   }
 
-  const totalAlunos = unidades.reduce((acc, unidade) => 
-    acc + unidade.turmas.reduce((turmaAcc, turma) => turmaAcc + turma.alunos, 0), 0
-  )
+  const totalAlunos = unidades.reduce((acc: number, unidade: any) => {
+    const turmas = Array.isArray(unidade.turmas) ? unidade.turmas : []
+    const alunosDaUnidade = turmas.reduce((turmaAcc: number, turma: any) => {
+      const alunos = Array.isArray(turma.alunos) ? turma.alunos.length : Number(turma.alunos || 0)
+      return turmaAcc + alunos
+    }, 0)
+    return acc + alunosDaUnidade
+  }, 0)
 
   if (isLoading) {
     return (

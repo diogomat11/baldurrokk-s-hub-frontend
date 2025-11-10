@@ -30,7 +30,7 @@ const createStub = () => {
   return { auth, from, rpc }
 }
 
-export const supabase = (!supabaseUrl || !supabaseAnonKey)
+export const supabase: any = (!supabaseUrl || !supabaseAnonKey)
   ? createStub()
   : createClient(supabaseUrl, supabaseAnonKey, {
       db: { schema: 'public' },

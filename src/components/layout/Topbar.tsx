@@ -8,7 +8,6 @@ import {
   LogOut,
   ChevronDown
 } from 'lucide-react'
-import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/Avatar'
 import { Badge } from '@/components/ui/Badge'

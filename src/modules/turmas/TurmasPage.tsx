@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { Plus, Search, Filter, Users, Calendar, Pencil, Trash2, Building2 } from 'lucide-react'
+import { Plus, Search, Users, Calendar, Pencil, Trash2, Building2 } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { toast } from 'sonner'
 import { Input } from '@/components/ui/Input'

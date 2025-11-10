@@ -41,7 +41,11 @@ export const AlunoForm: React.FC<AlunoFormProps> = ({ initialData, onSubmit, onC
   const [mostrarTodosPlanos, setMostrarTodosPlanos] = useState(false)
 
   const unidadesQuery = useQuery({ queryKey: ['unidades'], queryFn: () => getUnidades() })
-  const turmasQuery = useQuery({ queryKey: ['turmas', unidade], queryFn: () => getTurmas(unidade || undefined), enabled: !!unidade })
+  const turmasQuery = useQuery({
+    queryKey: ['turmas', unidade],
+    queryFn: () => getTurmas(unidade ? { unitId: unidade } : undefined),
+    enabled: !!unidade,
+  })
   const planosQuery = useQuery({
     queryKey: ['planos', mostrarTodosPlanos ? 'all' : unidade],
     queryFn: () => getPlanos(mostrarTodosPlanos ? undefined : (unidade || undefined)),
@@ -151,7 +155,7 @@ export const AlunoForm: React.FC<AlunoFormProps> = ({ initialData, onSubmit, onC
           </SelectTrigger>
           <SelectContent>
             {(unidadesQuery.data || []).map(u => (
-              <SelectItem key={u.id} value={u.id}>{u.name || u.nome || u.id}</SelectItem>
+              <SelectItem key={u.id} value={u.id}>{u.nome || u.id}</SelectItem>
             ))}
           </SelectContent>
         </Select>
@@ -164,7 +168,7 @@ export const AlunoForm: React.FC<AlunoFormProps> = ({ initialData, onSubmit, onC
           </SelectTrigger>
           <SelectContent>
             {(turmasQuery.data || []).map(t => (
-              <SelectItem key={t.id} value={t.id}>{t.name || t.nome}</SelectItem>
+              <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>
             ))}
           </SelectContent>
         </Select>

@@ -201,7 +201,6 @@ export const SelectWithSearch: React.FC<SelectWithSearchProps> = ({
   disabled = false,
 }) => {
   const [searchTerm, setSearchTerm] = React.useState("")
-  const [isOpen, setIsOpen] = React.useState(false)
 
   const filteredOptions = React.useMemo(() => {
     return options.filter(option =>

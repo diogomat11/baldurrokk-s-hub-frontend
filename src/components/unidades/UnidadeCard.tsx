@@ -7,7 +7,6 @@ import {
   Edit, 
   Trash2, 
   Building2,
-  Calendar,
   DollarSign
 } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
@@ -17,7 +16,7 @@ import { formatCurrency } from '@/lib/utils'
 import type { Unidade } from '@/types'
 
 interface UnidadeCardProps {
-  unidade: Unidade & { turmas?: { id: string; nome: string; capacidade: number; alunos: number }[] }
+  unidade: Omit<Unidade, 'turmas'> & { turmas?: { id: string; nome: string; capacidade: number; alunos: number }[] }
   onEdit: () => void
   onDelete: () => void
 }

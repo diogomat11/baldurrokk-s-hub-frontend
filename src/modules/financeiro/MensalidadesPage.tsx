@@ -22,16 +22,7 @@ type FaturaItem = {
   status: 'Pendente' | 'Pago' | 'Vencido' | 'Atrasado' | 'Cancelado'
 }
 
-const initialData: FaturaItem[] = [
-  { id: '1', aluno: 'João Silva', unidade: 'Centro', mes: '2025-10', valor: 320, vencimento: '2025-10-10', status: 'Pendente' },
-  { id: '2', aluno: 'Maria Santos', unidade: 'Sul', mes: '2025-10', valor: 320, vencimento: '2025-10-08', status: 'Pago' },
-  { id: '3', aluno: 'Pedro Almeida', unidade: 'Norte', mes: '2025-10', valor: 280, vencimento: '2025-10-05', status: 'Vencido' },
-  { id: '4', aluno: 'Ana Souza', unidade: 'Centro', mes: '2025-09', valor: 320, vencimento: '2025-09-10', status: 'Pago' },
-  { id: '5', aluno: 'Luiza Rocha', unidade: 'Sul', mes: '2025-10', valor: 300, vencimento: '2025-10-12', status: 'Pendente' },
-  { id: '6', aluno: 'Carlos Lima', unidade: 'Norte', mes: '2025-10', valor: 300, vencimento: '2025-10-07', status: 'Atrasado' },
-  { id: '7', aluno: 'Bruna Ferreira', unidade: 'Centro', mes: '2025-10', valor: 320, vencimento: '2025-10-10', status: 'Pendente' },
-  { id: '8', aluno: 'Rafaela Dias', unidade: 'Sul', mes: '2025-09', valor: 280, vencimento: '2025-09-10', status: 'Cancelado' },
-]
+// Dados de exemplo removidos para evitar avisos de variável não utilizada
 
 export const MensalidadesPage: React.FC = () => {
   const [faturas, setFaturas] = React.useState<FaturaItem[]>([])
@@ -159,9 +150,9 @@ export const MensalidadesPage: React.FC = () => {
           .from('integrations')
           .select('id, whatsapp_template')
           .in('id', ['whatsapp:cobranca:mensalidade','whatsapp:cobranca:cobranca','whatsapp:cobranca:default'])
-        const tplMens = (tplRows || []).find(r => String(r.id) === 'whatsapp:cobranca:mensalidade')
-        const tplCobr = (tplRows || []).find(r => String(r.id) === 'whatsapp:cobranca:cobranca')
-        const tplDef = (tplRows || []).find(r => String(r.id) === 'whatsapp:cobranca:default')
+        const tplMens = (tplRows || []).find((r: any) => String(r.id) === 'whatsapp:cobranca:mensalidade')
+        const tplCobr = (tplRows || []).find((r: any) => String(r.id) === 'whatsapp:cobranca:cobranca')
+        const tplDef = (tplRows || []).find((r: any) => String(r.id) === 'whatsapp:cobranca:default')
         templateText = (isVencida ? (tplCobr?.whatsapp_template || defaultCobranca) : (tplMens?.whatsapp_template || defaultMensalidade))
         if (!templateText) templateText = tplDef?.whatsapp_template || (isVencida ? defaultCobranca : defaultMensalidade)
       } catch { /* mantém default */ }
@@ -239,9 +230,10 @@ export const MensalidadesPage: React.FC = () => {
       setIsLoading(true)
       const monthStart = `${mes}-01`
       // Para obter o último dia do mês, criamos um Date e formatamos
-      const [y, m] = mes.split('-').map(Number)
-      const last = new Date(y, m, 0).getDate()
-      const monthEnd = `${mes}-${String(last).padStart(2, '0')}`
+      // Último dia do mês calculado, caso necessário no futuro
+      // const [y, m] = mes.split('-').map(Number)
+      // const last = new Date(y, m, 0).getDate()
+      // const monthEnd = `${mes}-${String(last).padStart(2, '0')}`
 
       // Usa RPC segura para evitar erro 500 (recursão RLS)
       const rpcStatus = (() => {

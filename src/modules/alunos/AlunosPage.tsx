@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { GraduationCap, Search, Filter, Users, Phone, Mail, Pencil, Trash2 } from 'lucide-react'
+import { GraduationCap, Search, Users, Phone, Mail, Pencil, Trash2, Filter } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
@@ -308,7 +308,7 @@ export const AlunosPage: React.FC = () => {
         <AlunoForm
           initialData={selectedAluno || undefined}
           onCancel={() => { setOpenEdit(false); setSelectedAluno(null) }}
-          onSubmit={(payload) => selectedAluno && updateMutation.mutate({ id: selectedAluno.id, payload })}
+          onSubmit={(payload) => { if (!selectedAluno) return; updateMutation.mutate({ id: selectedAluno.id, payload }) }}
         />
       </DialogContent>
     </Dialog>
@@ -322,8 +322,8 @@ export const AlunosPage: React.FC = () => {
       confirmText="Excluir"
       cancelText="Cancelar"
       variant="destructive"
-      onConfirm={() => deletingId && deleteMutation.mutate(deletingId)}
-      isLoading={deleteMutation.isLoading}
+      onConfirm={() => { if (!deletingId) return; deleteMutation.mutate(deletingId) }}
+      isLoading={deleteMutation.isPending}
     />
     </>
   )

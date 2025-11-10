@@ -21,10 +21,11 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
   }
 
   componentDidCatch(error: Error, info: React.ErrorInfo) {
-    this.setState({ error, info: { componentStack: info.componentStack } })
+    const componentStack: string = String(info?.componentStack || '')
+    this.setState({ error, info: { componentStack } })
     // Log simples no console; em produção, integrar com um serviço de logging
     console.error('ErrorBoundary capturou um erro:', error)
-    console.error('Component stack:', info.componentStack)
+    console.error('Component stack:', componentStack)
   }
 
   handleReload = () => {
@@ -36,8 +37,8 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
 
   render() {
     if (this.state.hasError) {
-      const message = this.state.error?.message || 'Ocorreu um erro inesperado.'
-      const stack = this.state.error?.stack || this.state.info?.componentStack
+      const message: string = this.state.error?.message ?? 'Ocorreu um erro inesperado.'
+      const stack: string | undefined = this.state.error?.stack ?? this.state.info?.componentStack
 
       return (
         <div className="min-h-screen flex items-center justify-center bg-app p-6">
@@ -58,7 +59,7 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
               <details className="mb-4">
                 <summary className="cursor-pointer text-sm text-accent">Ver detalhes técnicos</summary>
                 <pre className="mt-2 text-xs whitespace-pre-wrap bg-muted rounded-xl p-3 overflow-auto max-h-64">
-                  {stack}
+                  {stack ?? ''}
                 </pre>
               </details>
             )}

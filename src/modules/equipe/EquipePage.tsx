@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { Users, Search, Filter, UserCog, Mail, Phone, Pencil, Trash2 } from 'lucide-react'
+import { Users, Search, UserCog, Mail, Phone, Pencil, Trash2, Filter } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
@@ -256,7 +256,7 @@ export const EquipePage: React.FC = () => {
         <ProfissionalForm
           initialData={selectedProfissional || undefined}
           onCancel={() => { setOpenEdit(false); setSelectedProfissional(null) }}
-          onSubmit={(payload) => selectedProfissional && updateMutation.mutate({ id: selectedProfissional.id, payload })}
+          onSubmit={(payload) => { if (!selectedProfissional) return; updateMutation.mutate({ id: selectedProfissional.id, payload }) }}
         />
       </DialogContent>
     </Dialog>
@@ -270,8 +270,8 @@ export const EquipePage: React.FC = () => {
       confirmText="Excluir"
       cancelText="Cancelar"
       variant="destructive"
-      onConfirm={() => deletingId && deleteMutation.mutate(deletingId)}
-      isLoading={deleteMutation.isLoading}
+      onConfirm={() => { if (!deletingId) return; deleteMutation.mutate(deletingId) }}
+      isLoading={deleteMutation.isPending}
     />
     </>
   )

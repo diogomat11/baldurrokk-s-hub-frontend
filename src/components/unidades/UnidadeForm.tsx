@@ -4,7 +4,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
-import { Select } from '@/components/ui/Select'
+import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from '@/components/ui/Select'
 import { Card, CardContent } from '@/components/ui/Card'
 
 const unidadeSchema = z.object({
@@ -137,21 +137,19 @@ export const UnidadeForm: React.FC<UnidadeFormProps> = ({
               {...register('cidade')}
             />
 
-            <Select
-              value={watch('estado')}
-              onValueChange={handleEstadoChange}
-              label="Estado"
-              required
-              error={errors.estado?.message}
-            >
-              <option value="">Selecione o estado</option>
-              <option value="SP">São Paulo</option>
-              <option value="RJ">Rio de Janeiro</option>
-              <option value="MG">Minas Gerais</option>
-              <option value="ES">Espírito Santo</option>
-              <option value="PR">Paraná</option>
-              <option value="SC">Santa Catarina</option>
-              <option value="RS">Rio Grande do Sul</option>
+            <Select value={watch('estado')} onValueChange={handleEstadoChange}>
+              <SelectTrigger label="Estado" required error={!!errors.estado?.message}>
+                <SelectValue placeholder="Selecione o estado" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="SP">São Paulo</SelectItem>
+                <SelectItem value="RJ">Rio de Janeiro</SelectItem>
+                <SelectItem value="MG">Minas Gerais</SelectItem>
+                <SelectItem value="ES">Espírito Santo</SelectItem>
+                <SelectItem value="PR">Paraná</SelectItem>
+                <SelectItem value="SC">Santa Catarina</SelectItem>
+                <SelectItem value="RS">Rio Grande do Sul</SelectItem>
+              </SelectContent>
             </Select>
           </div>
 
@@ -192,16 +190,14 @@ export const UnidadeForm: React.FC<UnidadeFormProps> = ({
           <h3 className="text-lg font-semibold">Informações Financeiras</h3>
           
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <Select
-              value={tipoRepasse}
-              onValueChange={handleTipoRepasseChange}
-              label="Tipo de Repasse"
-              required
-              error={errors.tipoRepasse?.message}
-            >
-              <option value="">Selecione o tipo</option>
-              <option value="Percentual">Percentual</option>
-              <option value="Valor Fixo">Valor Fixo</option>
+            <Select value={tipoRepasse} onValueChange={handleTipoRepasseChange}>
+              <SelectTrigger label="Tipo de Repasse" required error={!!errors.tipoRepasse?.message}>
+                <SelectValue placeholder="Selecione o tipo" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="Percentual">Percentual</SelectItem>
+                <SelectItem value="Valor Fixo">Valor Fixo</SelectItem>
+              </SelectContent>
             </Select>
 
             <Input
@@ -213,16 +209,14 @@ export const UnidadeForm: React.FC<UnidadeFormProps> = ({
               {...register('valor', { valueAsNumber: true })}
             />
 
-            <Select
-              value={watch('status')}
-              onValueChange={handleStatusChange}
-              label="Status"
-              required
-              error={errors.status?.message}
-            >
-              <option value="">Selecione o status</option>
-              <option value="Ativa">Ativa</option>
-              <option value="Inativa">Inativa</option>
+            <Select value={watch('status')} onValueChange={handleStatusChange}>
+              <SelectTrigger label="Status" required error={!!errors.status?.message}>
+                <SelectValue placeholder="Selecione o status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="Ativa">Ativa</SelectItem>
+                <SelectItem value="Inativa">Inativa</SelectItem>
+              </SelectContent>
             </Select>
           </div>
         </CardContent>
