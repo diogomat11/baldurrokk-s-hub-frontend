@@ -115,8 +115,8 @@ export const Topbar: React.FC = () => {
       <div className="flex items-center justify-between p-4">
         {/* Branding à esquerda */}
         <div className="flex items-center space-x-3 mr-4">
-          <img src="/coelho-logo.webp" alt="Coelho Futebol e Futsal" className="h-8 w-8 rounded-lg" />
-          <span className="hidden md:block text-base font-bold">Coelho Futebol e Futsal</span>
+          <img src="/coelho-logo.webp" alt="Coelho Futebol e Futsal" className="h-10 w-10 rounded-2xl shadow" />
+          <span className="hidden md:block text-lg font-bold">Coelho Futebol e Futsal</span>
         </div>
         {/* Campo de busca */}
         <div className="flex-1 max-w-md">

@@ -164,11 +164,11 @@ export const Sidebar: React.FC = () => {
               <img 
                 src="/coelho-logo.webp" 
                 alt="Coelho Futebol e Futsal" 
-                className="h-12 w-12 rounded-lg"
+                className="h-16 w-16 rounded-2xl shadow-lg"
               />
               {!isCollapsed && (
                 <div>
-                  <h1 className="text-xl font-bold">Coelho Futebol e Futsal</h1>
+                  <h1 className="text-2xl font-bold">Coelho Futebol e Futsal</h1>
                 </div>
               )}
             </div>
@@ -273,8 +273,8 @@ export const Sidebar: React.FC = () => {
       <button
         onClick={() => setIsCollapsed(!isCollapsed)}
         className={cn(
-          "fixed top-4 left-4 z-50 p-2 rounded-xl bg-primary text-primary-foreground shadow-lg transition-all duration-300 lg:left-[calc(16rem+1rem)]",
-          isCollapsed && "lg:left-[calc(4rem+1rem)]"
+          "fixed top-4 left-4 z-[60] p-2 rounded-xl bg-primary text-primary-foreground shadow-lg transition-all duration-300 lg:left-[calc(16rem+2rem)]",
+          isCollapsed && "lg:left-[calc(4rem+1.5rem)]"
         )}
       >
         <Menu className="h-5 w-5" />

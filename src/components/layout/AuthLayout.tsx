@@ -14,7 +14,7 @@ export const AuthLayout: React.FC<AuthLayoutProps> = ({ children }) => {
             <img 
               src="/coelho-logo.webp" 
               alt="Coelho Futebol e Futsal" 
-              className="h-28 w-28 rounded-2xl shadow-lg"
+              className="h-32 w-32 rounded-2xl shadow-lg"
             />
           </div>
           <h1 className="text-3xl font-bold text-white mb-2">
