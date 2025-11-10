@@ -159,8 +159,8 @@ export const Sidebar: React.FC = () => {
       >
         <div className="flex h-full flex-col">
           {/* Header */}
-          <div className="flex items-center justify-between p-4 border-b border-primary-foreground/10">
-            <div className="flex items-center space-x-3">
+          <div className="flex items-center justify-center p-4 border-b border-primary-foreground/10">
+            <div className="flex items-center space-x-4">
               <img 
                 src="/coelho-logo.webp" 
                 alt="Coelho Futebol e Futsal" 
@@ -273,8 +273,8 @@ export const Sidebar: React.FC = () => {
       <button
         onClick={() => setIsCollapsed(!isCollapsed)}
         className={cn(
-          "fixed top-4 left-4 z-[60] p-2 rounded-xl bg-primary text-primary-foreground shadow-lg transition-all duration-300 lg:left-[calc(16rem+2rem)]",
-          isCollapsed && "lg:left-[calc(4rem+1.5rem)]"
+          "hidden lg:block fixed top-4 left-4 z-[60] p-2 rounded-xl bg-primary text-primary-foreground shadow-lg transition-all duration-300 lg:left-[calc(16rem+2rem)]",
+          isCollapsed && "lg:left-[calc(4rem+2rem)]"
         )}
       >
         <Menu className="h-5 w-5" />
