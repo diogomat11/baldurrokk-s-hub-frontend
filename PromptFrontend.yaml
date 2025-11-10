@@ -1,0 +1,222 @@
+frontend:
+  framework: "React + Vite"
+  language: "TypeScript"
+  ui_library: "shadcn/ui + TailwindCSS + Lucide Icons"
+  state_management: "Zustand (lightweight) / Redux Toolkit (if complex flows)"
+  routing: "React Router DOM (v7)"
+  forms: "React Hook Form + Zod for schema validation"
+  api_client: "Axios + React Query (tanstack) for caching"
+  notifications: "sonner/toast"
+  auth: 
+    mechanism: "Supabase Auth (JWT persisted in secure storage)"
+    auto_logout_after: 20 # minutos
+  layouts:
+    - MainLayout:
+        description: "Layout padrão com Sidebar e Topbar fixas"
+        components:
+          - Sidebar
+          - Topbar
+          - ContentArea
+    - AuthLayout:
+        description: "Layout de login/reset senha minimalista"
+        components:
+          - LoginForm
+          - ResetPasswordForm
+  navigation:
+    sidebar:
+      - Dashboard: { icon: "Home", route: "/dashboard" }
+      - Rede: { icon: "Globe", route: "/rede" }
+      - Unidades: { icon: "Building2", route: "/unidades" }
+      - Equipe Técnica: { icon: "Users", route: "/equipe" }
+      - Alunos: { icon: "GraduationCap", route: "/alunos" }
+      - Financeiro:
+          icon: "Wallet"
+          children:
+            - Recebíveis: { route: "/financeiro/mensalidades" }
+            - Despesas: { route: "/financeiro/despesas" }
+            - Repasses: { route: "/financeiro/repasses" }
+      - Relatórios: { icon: "FileBarChart", route: "/relatorios" }
+      - Configurações: { icon: "Settings", route: "/configuracoes" }
+    topbar:
+      - search_input: true
+      - notifications_icon:
+          type: "Bell"
+          action: "open_notifications_panel"
+      - user_avatar_menu:
+          options: ["Perfil", "Configurações", "Sair"]
+  pages:
+    - /login:
+        component: LoginPage
+        layout: AuthLayout
+        features:
+          - Validar login via Supabase
+          - Redirecionar conforme role
+    - /dashboard:
+        component: DashboardPage
+        layout: MainLayout
+        widgets:
+          - cards:
+              - total_unidades
+              - total_alunos
+              - faturamento_mensal
+              - inadimplencia
+              - churn
+          - charts:
+              - receita_por_unidade
+              - evolução_faturamento
+    - /unidades:
+        component: UnidadesPage
+        layout: MainLayout
+        sections:
+          - CardGrid de unidades com ação editar/ver
+          - ModalCadastroUnidade
+          - Aba de Turmas vinculadas
+        crud:
+          fields: [Nome, Responsável, Endereço, Cidade, Estado, CEP, Telefone, Email, TipoRepasse, Valor, Status]
+          validations:
+            - required: [Nome, Cidade, Responsável]
+            - mask: { telefone: "(99) 99999-9999", cep: "99999-999" }
+    - /equipe:
+        component: EquipePage
+        layout: MainLayout
+        features:
+          - Listagem cards profissionais
+          - Filtros: nome, cargo, unidade
+          - ModalCadastroProfissional
+        crud:
+          fields: [Nome, CPF, Cargo, Salário, Especialidades, Telefone, Email, Unidades, DataContratação, Status]
+    - /alunos:
+        component: AlunosPage
+        layout: MainLayout
+        features:
+          - Tabela com avatar, nome, unidade, responsável, telefone
+          - Botões editar / ver / gerar mensalidades
+          - ModalCadastroAluno
+        crud:
+          fields:
+            - Avatar
+            - Nome
+            - DataNascimento
+            - DataInicio (bloqueada após cadastro)
+            - CPF
+            - Endereço
+            - Responsável
+            - TelefoneResponsável
+            - EmailResponsável
+            - Unidade
+            - Turma
+            - Plano
+            - FormaPagamento
+            - Recorrência
+            - Descontos
+    - /financeiro:
+        component: FinanceiroPage
+        layout: MainLayout
+        tabs:
+          - Mensalidades:
+              table_columns: [Aluno, Unidade, Mês, Valor, Vencimento, Status, Ações]
+              actions:
+                - GerarMensalidades
+                - MarcarPago (upload comprovante)
+                - EnviarWhatsApp
+          - Despesas:
+              table_columns: [Fornecedor, Tipo, Valor, Vencimento, Status]
+          - Adiantamentos:
+              table_columns: [Tipo, Nome, Valor, Data, Status, Observação]
+          - Repasses:
+              table_columns: [Profissional/Unidade, Tipo, Valor, Mês, Status]
+    - /relatorios:
+        component: RelatoriosPage
+        layout: MainLayout
+        features:
+          - Export CSV/XLSX (Mensalidades, Alunos, Equipe, Despesas, Repasses)
+          - Filtros: intervalo, unidade, status
+    - /configuracoes:
+        component: ConfigPage
+        layout: MainLayout
+        subsections:
+          - Negociações
+          - Planos
+          - Recorrências
+          - Proporcionalidade
+          - Usuários
+          - Integrações
+  components:
+    shared:
+      - Button (variações: primary, secondary, ghost)
+      - InputText
+      - Select (com search)
+      - Modal
+      - Table
+      - Card
+      - Tabs
+      - DatePicker (dd/mm/yyyy)
+      - TimePicker (HH:MM)
+      - ConfirmDialog
+      - ToastNotification
+      - AvatarUploader
+    finance:
+      - InvoiceCard
+      - PaymentProofUploader
+      - WhatsappSendButton
+    alunos:
+      - StudentCard
+      - StudentForm
+      - PlanSelector
+      - DiscountBadge
+    dashboard:
+      - MetricCard
+      - LineChart
+      - PieChart
+  style_guide:
+    typography:
+      font_family: "Inter, sans-serif"
+      font_sizes:
+        title: "text-xl font-semibold"
+        subtitle: "text-sm text-gray-500"
+        body: "text-base"
+    colors:
+      primary: "#0F172A"
+      accent: "#3B82F6"
+      success: "#10B981"
+      danger: "#EF4444"
+      warning: "#F59E0B"
+      background: "#F9FAFB"
+      text_primary: "#111827"
+      text_secondary: "#6B7280"
+    components_design:
+      border_radius: "2xl"
+      shadow: "md"
+      spacing: "consistent padding (p-4 mínimo)"
+      transitions: "ease-in-out, duration-200"
+  responsiveness:
+    breakpoints:
+      sm: 640px
+      md: 768px
+      lg: 1024px
+      xl: 1280px
+    rules:
+      - sidebar_colapse_below: md
+      - cards_stack_below: md
+      - modals_fullscreen_below: sm
+  accessibility:
+    - keyboard_navigation: true
+    - aria_labels: all interactive components
+    - color_contrast: WCAG 2.1 AA compliant
+  performance:
+    - code_splitting: "React.lazy + Suspense per module"
+    - caching: "React Query + SWR"
+    - lazy_loading: "charts, tables, modals"
+  testing:
+    - unit_tests: "Vitest + Testing Library"
+    - e2e: "Cypress"
+    - snapshot_tests: "Storybook snapshots"
+  build_pipeline:
+    - vite_build: production optimized
+    - env_variables: ".env + Supabase URL/keys"
+    - deploy: "Vercel / Netlify"
+  maintenance_rules:
+    - cada módulo deve possuir pasta isolada (modules/dashboard, modules/financeiro, etc.)
+    - nenhum componente acessa diretamente API sem hook intermediário (useQuery/useMutation)
+    - tipagem global em `@types`
+    - documentação via Storybook e README.md por módulo

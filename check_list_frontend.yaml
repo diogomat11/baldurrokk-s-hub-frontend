@@ -1,0 +1,136 @@
+frontend_escolinha_futebol_saas:
+  objetivo: >
+    Desenvolver o frontend modular, responsivo e minimalista da aplicação SaaS da escolinha de futebol,
+    utilizando ReactJS + TailwindCSS, garantindo experiência fluida, segura e moderna.
+
+  tecnologias:
+    framework: ReactJS (Vite ou NextJS)
+    estilo: TailwindCSS
+    icones: Lucide-React
+    autenticação: Supabase Auth
+    comunicação_api: Axios ou Supabase Client
+    build: Vite
+    deploy: Vercel ou Netlify
+    timeout_sessao: 20min
+    formato_data: dd/mm/aaaa
+    formato_hora: HH:MM
+
+  checklist:
+    - etapa: Estrutura Inicial do Projeto
+      itens:
+        - [ ] Criar projeto base React com Vite
+        - [ ] Configurar ESLint e Prettier
+        - [ ] Configurar TailwindCSS com tema minimalista (tons neutros e verdes)
+        - [ ] Instalar bibliotecas principais (react-router-dom, axios, lucide-react)
+        - [ ] Criar estrutura de pastas:
+            - [ ] src/components
+            - [ ] src/pages
+            - [ ] src/context
+            - [ ] src/services
+            - [ ] src/hooks
+            - [ ] src/styles
+        - [ ] Implementar sistema de rotas com React Router
+        - [ ] Configurar Supabase Auth e verificação de sessão (logout 20min inativo)
+        - [ ] Criar hook de autenticação global (useAuth)
+
+    - etapa: Layout Base e Navegação
+      itens:
+        - [x] Sidebar responsiva com ícones (Dashboard, Unidades, Alunos, Financeiro etc.)
+        - [x] Topbar com ícone de notificações e avatar do usuário
+        - [x] Implementar navegação colapsável no menu lateral
+        - [ ] Criar tema dark/light (opcional)
+        - [x] Implementar breadcrumb simples para localização do usuário
+
+    - etapa: Componentes Reutilizáveis
+      itens:
+        - [x] Botões (primário, secundário, desabilitado)
+        - [ ] Campos de formulário (input, select, multiselect, datepicker, textarea)
+        - [x] Cards (unidade, aluno, profissional, financeiro)
+        - [ ] Modal genérico (visualizar, editar, confirmação)
+        - [x] Tabela com paginação e busca
+        - [ ] Loader e Feedback de estado (sucesso, erro, carregando)
+        - [x] Notificações (toast, alerts)
+        - [ ] Avatar e upload de imagem
+
+    - etapa: Páginas e Módulos
+      itens:
+        - [ ] Dashboard Gerencial
+            - [ ] KPIs: alunos, unidades, faturamento, inadimplência, churn
+            - [ ] Gráficos (recharts)
+            - [ ] Cards interativos com links para módulos
+        - [ ] Rede / Unidades / Turmas
+            - [x] Listagem em cards
+            - [x] CRUD completo (modal para edição)
+            - [ ] Aba interna para cadastro de turmas
+            - [ ] Multiselect para equipe técnica e horários
+        - [ ] Equipe Técnica
+            - [ ] Listagem e filtro (nome, cargo, unidade)
+            - [ ] CRUD com upload de imagem e seleção múltipla de unidades
+        - [ ] Alunos
+            - [ ] Listagem com filtro (nome, unidade, status)
+            - [ ] CRUD completo com cálculo automático de mensalidade
+            - [ ] Exibição de mensalidades vinculadas
+            - [ ] Modal de detalhes e edição
+        - [ ] Financeiro
+            - [x] Dashboard com indicadores (recebíveis, inadimplência, repasses)
+            - [ ] Aba Mensalidades
+                - [ ] Geração automática de mensalidades
+                - [x] Marcar pagamento com comprovante
+                - [x] Envio de WhatsApp (mensagem padrão)
+                - [x] Filtros (status, aluno, data)
+            - [ ] Aba Despesas
+                - [ ] Listagem e CRUD simples
+            - [ ] Aba Adiantamentos
+                - [ ] Listagem e CRUD
+            - [ ] Aba Repasses
+                - [x] Listagem mensal e botão de conciliação
+        - [ ] Relatórios
+            - [ ] Filtros por módulo (aluno, equipe, financeiro)
+            - [x] Exportar CSV/XLS
+        - [ ] Configurações
+            - [ ] Planos (CRUD)
+            - [ ] Recorrências (CRUD)
+            - [ ] Proporcionalidades (CRUD)
+            - [ ] Negociações (CRUD)
+            - [ ] Usuários (CRUD + perfis)
+            - [ ] Integrações (cards placeholders para Stripe, WhatsApp, N8N)
+
+    - etapa: UX/UI e Responsividade
+      itens:
+        - [ ] Design mobile-first
+        - [ ] Testar visual em notebook, tablet e smartphone
+        - [ ] Aplicar padding e espaçamento adequados
+        - [x] Usar ícones modernos (Lucide)
+        - [ ] Animações sutis (Framer Motion)
+        - [ ] Feedback visual rápido (transições suaves)
+        - [x] Layout fluido sem scrolls desnecessários
+
+    - etapa: Testes e Validação
+      itens:
+        - [ ] Testar formulários (validação e mensagens de erro)
+        - [ ] Testar rotas protegidas (acesso conforme perfil)
+        - [ ] Testar notificações de inatividade (logout após 20min)
+        - [ ] Testar responsividade (emulador mobile)
+        - [x] Testar integração API (axios/supabase)
+        - [ ] Validar tempo de carregamento das páginas
+        - [ ] Revisar acessibilidade (uso de teclado e contraste)
+
+    - etapa: Integração e Deploy
+      itens:
+        - [x] Configurar variáveis de ambiente (URL API, chave Supabase)
+        - [x] Conectar com endpoints do backend
+        - [ ] Validar fluxo completo (login → dashboard → módulos)
+        - [ ] Testar envio de WhatsApp via integração simulada
+        - [ ] Publicar versão beta (staging)
+        - [ ] Corrigir bugs e realizar QA final
+        - [ ] Deploy produção (Vercel/Netlify)
+        - [ ] Criar documentação visual e tutorial de uso
+
+    - etapa: Manutenção e Evolução
+      itens:
+        - [ ] Criar versão de changelog (controle de versões)
+        - [ ] Implementar monitoramento (LogRocket ou Sentry)
+        - [ ] Coletar feedback de usuários
+        - [ ] Revisar performance trimestral
+        - [ ] Atualizar dependências com segurança
+        - [ ] Planejar novos módulos (agenda, avaliações, comunicação interna)
