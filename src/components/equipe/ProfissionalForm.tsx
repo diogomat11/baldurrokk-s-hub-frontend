@@ -48,6 +48,8 @@ export const ProfissionalForm: React.FC<ProfissionalFormProps> = ({ initialData,
       setUnidades(initialData.unidades || [])
       setDataContratacao(initialData.dataContratacao || '')
       setStatus(initialData.status || 'Ativo')
+      setTipoRepasse(initialData.repass_type || 'Fixo')
+      setPercentualRepasse(initialData.repass_value || 0)
     }
   }, [initialData])
 
@@ -59,11 +61,11 @@ export const ProfissionalForm: React.FC<ProfissionalFormProps> = ({ initialData,
       cargo,
       salario,
       especialidades,
-      telefone,
-      email,
       unidades,
       dataContratacao,
       status,
+      repass_type: tipoRepasse,
+      repass_value: tipoRepasse === 'Fixo' ? salario : percentualRepasse,
     }
     onSubmit(payload)
   }
@@ -88,6 +90,7 @@ export const ProfissionalForm: React.FC<ProfissionalFormProps> = ({ initialData,
             <SelectItem value="Coordenador">Coordenador</SelectItem>
             <SelectItem value="Administrador">Administrador</SelectItem>
             <SelectItem value="Recepcionista">Recepcionista</SelectItem>
+            <SelectItem value="Estagiário">Estagiário</SelectItem>
           </SelectContent>
         </Select>
         <Input label="Data de Contratação" type="date" value={dataContratacao} onChange={(e) => setDataContratacao(e.target.value)} />

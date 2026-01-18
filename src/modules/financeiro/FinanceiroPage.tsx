@@ -9,12 +9,15 @@ import { formatCurrency } from '@/lib/utils'
 import { MensalidadesPage } from './MensalidadesPage'
 import { DespesasPage } from './DespesasPage'
 import { RepassesPage } from './RepassesPage'
+import { LancamentosPage } from './LancamentosPage'
+import { RepasseDetails } from './RepasseDetails'
 
 export const FinanceiroPage: React.FC = () => {
   const tabs = [
     { label: 'Recebíveis', to: '/financeiro/mensalidades' },
     { label: 'Despesas', to: '/financeiro/despesas' },
     { label: 'Repasses', to: '/financeiro/repasses' },
+    { label: 'Lançamentos', to: '/financeiro/lancamentos' },
   ]
 
   return (
@@ -50,6 +53,8 @@ export const FinanceiroPage: React.FC = () => {
         <Route path="mensalidades" element={<MensalidadesPage />} />
         <Route path="despesas" element={<DespesasPage />} />
         <Route path="repasses" element={<RepassesPage />} />
+        <Route path="repasses/:id" element={<RepasseDetails />} />
+        <Route path="lancamentos" element={<LancamentosPage />} />
         <Route path="*" element={<Navigate to="/financeiro" replace />} />
       </Routes>
     </div>

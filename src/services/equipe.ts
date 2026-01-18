@@ -16,6 +16,8 @@ type ProfessionalDto = {
   status?: 'Ativo' | 'Inativo' | 'Licença' | 'Active' | 'Inactive'
   created_at: string
   updated_at: string
+  repass_type?: 'Fixo' | 'Percentual'
+  repass_value?: number
 }
 
 const mapCargo = (role?: string): CargoProfissional => {
@@ -46,6 +48,8 @@ const mapDtoToProfissional = (dto: ProfessionalDto): Profissional => ({
   status: mapStatus(dto.status),
   created_at: dto.created_at,
   updated_at: dto.updated_at,
+  repass_type: dto.repass_type || 'Fixo',
+  repass_value: dto.repass_value || 0
 })
 
 export async function getEquipe(search?: string): Promise<Profissional[]> {
@@ -80,6 +84,8 @@ const mapProfissionalToDto = (p: Partial<Profissional> & { nome?: string }): Par
     // Datas: enviar undefined quando vazio para evitar erro 22007
     hired_at: trimOrUndefined(p.dataContratacao),
     status: p.status as ProfessionalDto['status'],
+    repass_type: p.repass_type || 'Fixo',
+    repass_value: p.repass_value || 0
   };
 }
 

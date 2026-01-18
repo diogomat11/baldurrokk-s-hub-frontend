@@ -1,36 +1,87 @@
 import React from 'react'
+import { useNavigate } from 'react-router-dom'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from '@/components/ui/Select'
 import { StatusBadge } from '@/components/ui/Badge'
 import { MetricCard } from '@/components/dashboard/MetricCard'
-import { FileBarChart, CheckCircle, MessageSquare } from 'lucide-react'
+import { FileBarChart, CheckCircle, Eye, FileText, Loader2, ArrowRight, ListPlus } from 'lucide-react'
+import { PaginationControl } from '@/components/ui/PaginationControl'
 import { formatCurrency } from '@/lib/utils'
 import { toast } from 'sonner'
 import { supabase } from '@/services/supabase/client'
-import { markRepassPaid } from '@/services/financeiro'
+import { markRepassPaid, generateRepassPreview, confirmRepass, RepassPreviewItem } from '@/services/financeiro'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/Modal'
+import { MultiSelect, MultiSelectOption } from '@/components/ui/MultiSelect'
 
 type RepassItem = {
   id: string
   referencia: string // Profissional/Unidade
   tipo: 'Profissional' | 'Unidade'
   valor: number
+  gross_value: number
+  advance_deduction: number
   mes: string // YYYY-MM
+  mes_origem?: string
   status: 'Pendente' | 'Pago'
+  receipt_url?: string
 }
 
-const initialData: RepassItem[] = [
-  { id: '1', referencia: 'Unidade Centro', tipo: 'Unidade', valor: 1800, mes: '2025-10', status: 'Pendente' },
-  { id: '2', referencia: 'Prof. Maria Santos', tipo: 'Profissional', valor: 950, mes: '2025-10', status: 'Pago' },
-  { id: '3', referencia: 'Unidade Sul', tipo: 'Unidade', valor: 1200, mes: '2025-10', status: 'Pendente' },
-]
-
 export const RepassesPage: React.FC = () => {
-  const [repasses, setRepasses] = React.useState<RepassItem[]>(initialData)
-  const [mes, setMes] = React.useState('2025-10')
+  const navigate = useNavigate()
+  const [repasses, setRepasses] = React.useState<RepassItem[]>([])
+  const [mes, setMes] = React.useState(new Date().toISOString().slice(0, 7))
   const [status, setStatus] = React.useState('all')
   const [tipo, setTipo] = React.useState('all')
   const [isLoading, setIsLoading] = React.useState(false)
+
+  // Generation Modal State
+  const [openGenerate, setOpenGenerate] = React.useState(false)
+  const [genStep, setGenStep] = React.useState<'config' | 'preview'>('config')
+  const [genMonth, setGenMonth] = React.useState(() => {
+    const d = new Date()
+    d.setMonth(d.getMonth() - 1)
+    return d.toISOString().slice(0, 7)
+  })
+  const [genType, setGenType] = React.useState<'Profissional' | 'Unidade' | 'Ambos'>('Ambos')
+
+  // Entity Selection Support
+  const [entityOptions, setEntityOptions] = React.useState<MultiSelectOption[]>([])
+  const [selectedEntities, setSelectedEntities] = React.useState<string[]>([])
+  const [loadingOptions, setLoadingOptions] = React.useState(false)
+
+  const [previewData, setPreviewData] = React.useState<RepassPreviewItem[]>([])
+  const [selectedPreviews, setSelectedPreviews] = React.useState<string[]>([]) // Entity IDs from preview
+  const [isGenerating, setIsGenerating] = React.useState(false)
+
+  // Load Entity Options when GenType changes
+  React.useEffect(() => {
+    async function loadOpts() {
+      if (!openGenerate) return
+      if (genType === 'Ambos') {
+        setEntityOptions([])
+        setSelectedEntities([])
+        return
+      }
+      setLoadingOptions(true)
+      try {
+        let opts: MultiSelectOption[] = []
+        if (genType === 'Profissional') {
+          const { data } = await supabase.from('professionals').select('id, name').order('name')
+          opts = (data || []).map((p: any) => ({ label: p.name, value: p.id }))
+        } else if (genType === 'Unidade') {
+          const { data } = await supabase.from('units').select('id, name').order('name')
+          opts = (data || []).map((u: any) => ({ label: u.name, value: u.id }))
+        }
+        setEntityOptions(opts)
+      } catch (e) {
+        console.error(e)
+      } finally {
+        setLoadingOptions(false)
+      }
+    }
+    loadOpts()
+  }, [genType, openGenerate])
 
   const filtered = React.useMemo(() => {
     return repasses.filter((r) => {
@@ -40,6 +91,19 @@ export const RepassesPage: React.FC = () => {
       return matchesMes && matchesStatus && matchesTipo
     })
   }, [repasses, mes, status, tipo])
+
+  const [currentPage, setCurrentPage] = React.useState(1)
+  const [itemsPerPage, setItemsPerPage] = React.useState(25)
+
+  React.useEffect(() => {
+    setCurrentPage(1)
+  }, [mes, status, tipo])
+
+  const paginatedRepasses = React.useMemo(() => {
+    const start = (currentPage - 1) * itemsPerPage
+    const end = start + itemsPerPage
+    return filtered.slice(start, end)
+  }, [filtered, currentPage, itemsPerPage])
 
   const total = React.useMemo(() => filtered.reduce((acc, r) => acc + r.valor, 0), [filtered])
   const totalPendentes = React.useMemo(() => filtered.filter(r => r.status === 'Pendente').reduce((acc, r) => acc + r.valor, 0), [filtered])
@@ -56,7 +120,7 @@ export const RepassesPage: React.FC = () => {
 
       let q = supabase
         .from('repasses')
-        .select('id,entity_type,entity_id,period_start,period_end,net_value,status')
+        .select('id,entity_type,entity_id,period_start,period_end,net_value,gross_value,advance_deduction,status,receipt_url')
         .gte('period_start', start)
         .lte('period_end', end)
       if (rpcStatus) q = (q as any).eq('status', rpcStatus)
@@ -67,14 +131,28 @@ export const RepassesPage: React.FC = () => {
         return
       }
 
+      const { data: profs } = await supabase.from('professionals').select('id,name')
+      const { data: units } = await supabase.from('units').select('id,name')
+
+      const getName = (type: string, id: string) => {
+        if (type === 'Equipe') return (profs || []).find((p: any) => p.id === id)?.name || 'Profissional'
+        if (type === 'Unidade') return (units || []).find((u: any) => u.id === id)?.name || 'Unidade'
+        return 'Desconhecido'
+      }
+
       const tipoMap = (et: string): 'Profissional' | 'Unidade' => (et === 'Equipe' ? 'Profissional' : 'Unidade')
+
       const ui: RepassItem[] = (data || []).map((row: any) => ({
         id: row.id,
-        referencia: `${tipoMap(String(row.entity_type))} ${String(row.entity_id).slice(0, 8)}`,
+        referencia: getName(String(row.entity_type), String(row.entity_id)),
         tipo: tipoMap(String(row.entity_type)),
         valor: Number(row.net_value || 0),
+        gross_value: Number(row.gross_value || 0),
+        advance_deduction: Number(row.advance_deduction || 0),
         mes: String(row.period_start || '').slice(0, 7),
+        mes_origem: row.origin_month ? String(row.origin_month).slice(0, 7) : String(row.period_start || '').slice(0, 7),
         status: String(row.status || 'Aberta') === 'Paga' ? 'Pago' : 'Pendente',
+        receipt_url: row.receipt_url
       }))
 
       setRepasses(ui)
@@ -98,103 +176,56 @@ export const RepassesPage: React.FC = () => {
     }
   }
 
-  const handleGerarRepasses = () => {
-    toast.info('Geração de repasses iniciada (mock)')
-  }
-
-  const handleExportarCsv = () => {
-    toast.info('Exportação CSV iniciada (mock)')
-  }
-
-  const handleEnviarWhatsapp = async (id: string) => {
+  // Generation Logic
+  const handlePreview = async () => {
     try {
-      // Carrega dados do repasse
-      const { data: rep, error: repErr } = await supabase
-        .from('repasses')
-        .select('id,entity_type,entity_id,period_start,receipt_url')
-        .eq('id', id)
-        .limit(1)
-        .maybeSingle()
-      if (repErr || !rep) { toast.error('Não foi possível carregar o repasse', { description: repErr?.message }); return }
+      setIsGenerating(true)
+      // Pass NULL to RPC to get all, then filter in JS
+      const data = await generateRepassPreview(genMonth, genType)
 
-      const isEquipe = String(rep.entity_type) === 'Equipe'
-      if (!isEquipe) { toast.info('Envio via WhatsApp disponível apenas para repasses de Profissionais'); return }
-
-      // Tenta buscar em professionals; se não houver, fallback para equipe_tecnica
-      let prof: any = null
-      {
-        const { data: p1, error: e1 } = await supabase
-          .from('professionals')
-          .select('id,name,telefone')
-          .eq('id', String(rep.entity_id))
-          .limit(1)
-          .maybeSingle()
-        if (!e1 && p1) prof = p1
+      let filteredData = data
+      if (genType !== 'Ambos' && selectedEntities.length > 0) {
+        filteredData = data.filter(d => selectedEntities.includes(d.entity_id))
       }
-      if (!prof) {
-        const { data: p2 } = await supabase
-          .from('equipe_tecnica')
-          .select('id,nome,telefone')
-          .eq('id', String(rep.entity_id))
-          .limit(1)
-          .maybeSingle()
-        if (p2) prof = p2
-      }
-      if (!prof) { toast.error('Não foi possível carregar o profissional'); return }
 
-      const phoneRaw = String((prof as any).telefone || '').trim()
-      if (!phoneRaw) { toast.error('Profissional sem telefone cadastrado'); return }
-      const normalizePhone = (p: string) => {
-        const digits = String(p).replace(/\D+/g, '')
-        if (digits.length === 13 && digits.startsWith('55')) return digits
-        if (digits.length === 11) return `55${digits}`
-        if (digits.length === 10) return `55${digits}`
-        return digits
-      }
-      const phone = normalizePhone(phoneRaw)
-      if (!phone) { toast.error('Telefone do profissional inválido'); return }
-
-      // Template de repasse
-      const defaultRepasse = "Olá {{profissional}} segue abaixo demonstrativo de repasse do mês de {{mes}}, peço que faça conferência para que possamos efetuar o pagamento.\n{{link_pdf}}"
-      let templateText = defaultRepasse
-      try {
-        const { data: tplRows } = await supabase
-          .from('integrations')
-          .select('id, whatsapp_template')
-          .eq('id', 'whatsapp:repasse:default')
-          .maybeSingle()
-        templateText = (tplRows as any)?.whatsapp_template || defaultRepasse
-      } catch {}
-
-      const mesFmt = String(rep.period_start || '').slice(0, 7)
-      const linkPdf = String((rep as any).receipt_url || '').trim()
-      const vars: Record<string,string> = {
-        profissional: String((prof as any).name || (prof as any).nome || 'Profissional'),
-        mes: mesFmt,
-        link_pdf: linkPdf || '[anexo_pdf de Repasse]'
-      }
-      const fillTemplate = (t: string, v: Record<string,string>) => (
-        t
-          .replace(/\{\{(\w+)\}\}/g, (_, key) => v[key] ?? '')
-          .replace(/\[(Profissional|Mês|Mes|anexo_pdf de Repasse)\]/gi, (m) => {
-            const k = m.replace(/\[|\]/g, '')
-            const map: Record<string,string> = {
-              'Profissional': v.profissional,
-              'Mês': v.mes,
-              'Mes': v.mes,
-              'anexo_pdf de Repasse': v.link_pdf,
-            }
-            return map[k] ?? ''
-          })
-      )
-      const message = fillTemplate(templateText, vars)
-      const url = `https://wa.me/${phone}?text=${encodeURIComponent(message)}`
-      if (typeof window !== 'undefined') window.open(url, '_blank')
-      toast.success('Abrindo WhatsApp Web', { description: `${(prof as any).name || 'Profissional'} • ${mesFmt}` })
+      setPreviewData(filteredData)
+      // Default select all with positive values or meaningful data
+      setSelectedPreviews(filteredData.filter(d => d.final_value !== 0 || d.invoice_count > 0 || d.movement_count > 0).map(d => d.entity_id))
+      setGenStep('preview')
     } catch (e: any) {
-      toast.error('Falha ao abrir WhatsApp', { description: e?.message || String(e) })
+      toast.error('Erro ao processar', { description: e.message })
+    } finally {
+      setIsGenerating(false)
     }
   }
+
+  const handleConfirmGeneration = async () => {
+    try {
+      setIsGenerating(true)
+      let successCount = 0
+
+      for (const entityId of selectedPreviews) {
+        const item = previewData.find(d => d.entity_id === entityId)
+        if (!item) continue
+        await confirmRepass(genMonth, item.entity_type === 'Profissional' ? 'Profissional' : item.entity_type, entityId)
+        successCount++
+      }
+
+      toast.success(`${successCount} repasses gerados com sucesso`)
+      setOpenGenerate(false)
+      setGenStep('config')
+      if (mes === genMonth) loadRepasses() // Refresh if viewing same month
+    } catch (e: any) {
+      toast.error('Erro ao gerar repasses', { description: e.message })
+    } finally {
+      setIsGenerating(false)
+    }
+  }
+
+  const handleEnviarWhatsapp = async (_: string, ref: string) => {
+    toast.info(`Funcionalidade WhatsApp para ${ref} em implementação.`)
+  }
+
 
   return (
     <div className="space-y-6">
@@ -209,7 +240,13 @@ export const RepassesPage: React.FC = () => {
       {/* Filtros e ações */}
       <Card>
         <CardHeader>
-          <CardTitle>Repasses</CardTitle>
+          <div className="flex justify-between items-center">
+            <CardTitle>Repasses</CardTitle>
+            <Button variant="outline" size="sm" onClick={() => navigate('/financeiro/lancamentos')}>
+              <ListPlus className="h-4 w-4 mr-2" />
+              Gerenciar Lançamentos
+            </Button>
+          </div>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
@@ -243,14 +280,131 @@ export const RepassesPage: React.FC = () => {
               </SelectContent>
             </Select>
             <div className="flex items-end">
-              <Button variant="accent" className="w-full" onClick={handleGerarRepasses}>
-                Gerar repasses
-              </Button>
-            </div>
-            <div className="flex items-end">
-              <Button variant="outline" className="w-full" onClick={handleExportarCsv}>
-                Exportar CSV
-              </Button>
+              <Dialog open={openGenerate} onOpenChange={(open) => {
+                setOpenGenerate(open)
+                if (!open) {
+                  setGenStep('config')
+                  setSelectedEntities([])
+                }
+              }}>
+                <DialogTrigger asChild>
+                  <Button variant="accent" className="w-full">
+                    Gerar repasses
+                  </Button>
+                </DialogTrigger>
+                <DialogContent size="lg" className="max-w-4xl max-h-[90vh] overflow-y-auto">
+                  <DialogHeader>
+                    <DialogTitle>Gerar Repasses Automáticos</DialogTitle>
+                  </DialogHeader>
+
+                  {genStep === 'config' ? (
+                    <div className="space-y-4 py-4">
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <label className="text-sm font-medium">Mês de Referência</label>
+                          <input type="month" className="flex h-10 w-full rounded-2xl border border-input bg-background px-3 py-2 text-sm"
+                            value={genMonth} onChange={e => setGenMonth(e.target.value)} />
+                        </div>
+                        <div>
+                          <label className="text-sm font-medium">Tipo</label>
+                          <Select value={genType} onValueChange={(v: any) => setGenType(v)}>
+                            <SelectTrigger><SelectValue /></SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="Ambos">Ambos (Profissionais e Unidades)</SelectItem>
+                              <SelectItem value="Profissional">Apenas Profissionais</SelectItem>
+                              <SelectItem value="Unidade">Apenas Unidades</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </div>
+
+                      {genType !== 'Ambos' && (
+                        <div className="space-y-2">
+                          <label className="text-sm font-medium">Beneficiários (1, vários ou todos)</label>
+                          <MultiSelect
+                            options={entityOptions}
+                            values={selectedEntities}
+                            onChange={setSelectedEntities}
+                            placeholder={loadingOptions ? "Carregando..." : (selectedEntities.length === 0 ? "Todos (ou selecione específicos)" : "Selecionados")}
+                            disabled={loadingOptions}
+                          />
+                          <p className="text-xs text-muted-foreground">Deixe vazio para processar todos os beneficiários deste tipo.</p>
+                        </div>
+                      )}
+
+                      <div className="bg-muted/50 p-4 rounded-md text-sm text-muted-foreground">
+                        <p>O sistema irá buscar todas as mensalidades pagas e lançamentos (adiantamentos/bônus) para calcular o repasse.</p>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="space-y-4 py-4">
+                      <div className="flex justify-between items-center">
+                        <h4 className="font-semibold">Confirmar Geração ({previewData.length} itens)</h4>
+                        <Button variant="ghost" size="sm" onClick={() => setGenStep('config')}>Voltar</Button>
+                      </div>
+                      <div className="border rounded-md overflow-hidden">
+                        <table className="min-w-full text-xs">
+                          <thead className="bg-muted">
+                            <tr>
+                              <th className="px-3 py-2 text-left"><input type="checkbox" className="rounded border-gray-300 text-primary focus:ring-primary" checked={selectedPreviews.length === previewData.length} onChange={(e) => setSelectedPreviews(e.target.checked ? previewData.map(d => d.entity_id) : [])} /></th>
+                              <th className="px-3 py-2 text-left">Nome</th>
+                              <th className="px-3 py-2 text-right">Base / Mensal.</th>
+                              <th className="px-3 py-2 text-right">Bônus</th>
+                              <th className="px-3 py-2 text-right">Adiant.</th>
+                              <th className="px-3 py-2 text-right font-bold">Total</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {previewData.map(item => {
+                              const baseVal = item.repass_type === 'Fixo'
+                                ? item.repass_base_value
+                                : (item.total_invoices * item.repass_base_value / 100)
+
+                              return (
+                                <tr key={item.entity_id} className="border-t">
+                                  <td className="px-3 py-2">
+                                    <input type="checkbox" className="rounded border-gray-300 text-primary focus:ring-primary" checked={selectedPreviews.includes(item.entity_id)} onChange={(e) => {
+                                      if (e.target.checked) setSelectedPreviews([...selectedPreviews, item.entity_id])
+                                      else setSelectedPreviews(selectedPreviews.filter(id => id !== item.entity_id))
+                                    }} />
+                                  </td>
+                                  <td className="px-3 py-2">
+                                    <div className="font-medium">{item.entity_name}</div>
+                                    <div className="text-xs text-muted-foreground">{item.entity_type}</div>
+                                  </td>
+                                  <td className="px-3 py-2 text-right">
+                                    <div>{formatCurrency(baseVal)}</div>
+                                    <div className="text-[10px] text-muted-foreground">
+                                      {item.repass_type === 'Fixo' ? 'Fixo' : `${item.invoice_count} itens`}
+                                    </div>
+                                  </td>
+                                  <td className="px-3 py-2 text-right text-green-600">{formatCurrency(item.total_bonuses)}</td>
+                                  <td className="px-3 py-2 text-right text-red-600">{formatCurrency(item.total_advances)}</td>
+                                  <td className="px-3 py-2 text-right font-bold">{formatCurrency(item.final_value)}</td>
+                                </tr>
+                              )
+                            })}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  )}
+
+                  <DialogFooter>
+                    {genStep === 'config' ? (
+                      <Button onClick={handlePreview} disabled={isGenerating}>
+                        {isGenerating && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                        Continuar <ArrowRight className="ml-2 h-4 w-4" />
+                      </Button>
+                    ) : (
+                      <Button onClick={handleConfirmGeneration} disabled={isGenerating || selectedPreviews.length === 0} variant="success">
+                        {isGenerating && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                        Gerar {selectedPreviews.length} Repasses
+                      </Button>
+                    )}
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
             </div>
           </div>
         </CardContent>
@@ -265,8 +419,10 @@ export const RepassesPage: React.FC = () => {
                 <tr className="text-left">
                   <th className="px-4 py-3 text-xs text-muted-foreground">Referência</th>
                   <th className="px-4 py-3 text-xs text-muted-foreground">Tipo</th>
-                  <th className="px-4 py-3 text-xs text-muted-foreground">Valor</th>
-                  <th className="px-4 py-3 text-xs text-muted-foreground">Mês</th>
+                  <th className="px-4 py-3 text-xs text-muted-foreground">Valor Bruto</th>
+                  <th className="px-4 py-3 text-xs text-muted-foreground">Descontos</th>
+                  <th className="px-4 py-3 text-xs text-muted-foreground">Líquido</th>
+                  <th className="px-4 py-3 text-xs text-muted-foreground">Mês Ref.</th>
                   <th className="px-4 py-3 text-xs text-muted-foreground">Status</th>
                   <th className="px-4 py-3 text-xs text-muted-foreground">Ações</th>
                 </tr>
@@ -274,46 +430,65 @@ export const RepassesPage: React.FC = () => {
               <tbody>
                 {isLoading ? (
                   <tr>
-                    <td className="px-4 py-6 text-center text-muted-foreground" colSpan={6}>
+                    <td className="px-4 py-6 text-center text-muted-foreground" colSpan={8}>
                       Carregando repasses...
                     </td>
                   </tr>
                 ) : filtered.length === 0 ? (
                   <tr>
-                    <td className="px-4 py-6 text-center text-muted-foreground" colSpan={6}>
+                    <td className="px-4 py-6 text-center text-muted-foreground" colSpan={8}>
                       Nenhum repasse encontrado
                     </td>
                   </tr>
                 ) : (
-                  filtered.map((r) => (
+                  paginatedRepasses.map((r) => (
                     <tr key={r.id} className="border-t border-border">
                       <td className="px-4 py-3">{r.referencia}</td>
                       <td className="px-4 py-3">{r.tipo}</td>
-                      <td className="px-4 py-3 font-medium">{formatCurrency(r.valor)}</td>
+                      <td className="px-4 py-3">{formatCurrency(r.gross_value || r.valor)}</td>
+                      <td className="px-4 py-3 text-red-600">{formatCurrency(r.advance_deduction)}</td>
+                      <td className="px-4 py-3 font-medium text-green-700">{formatCurrency(r.valor)}</td>
                       <td className="px-4 py-3">{r.mes}</td>
                       <td className="px-4 py-3">
                         <StatusBadge status={r.status} />
                       </td>
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-2">
-                          <Button
-                            variant="success"
-                            size="sm"
-                            disabled={r.status === 'Pago'}
-                            onClick={() => handleMarcarPago(r.id)}
-                          >
-                            <CheckCircle className="h-4 w-4 mr-1" />
-                            Marcar pago
+                          <Button variant="ghost" size="sm" title="Ver Detalhes/PDF" onClick={() => navigate(`/financeiro/repasses/${r.id}`)}>
+                            <FileText className="h-4 w-4" />
                           </Button>
-                          {r.tipo === 'Profissional' && (
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleEnviarWhatsapp(r.id)}
-                            >
-                              <MessageSquare className="h-4 w-4 mr-1" />
-                              WhatsApp
-                            </Button>
+                          {['Paga', 'Pago'].includes(r.status) ? (
+                            <span title={r.receipt_url ? "Ver Comprovante" : "Repasse sem comprovante Anexo"}>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => r.receipt_url && window.open(r.receipt_url, '_blank')}
+                                disabled={!r.receipt_url}
+                              >
+                                <Eye className={`h-4 w-4 ${r.receipt_url ? "text-blue-600" : "text-muted-foreground"}`} />
+                              </Button>
+                            </span>
+                          ) : (
+                            <>
+                              <Button
+                                variant="success"
+                                size="sm"
+                                onClick={() => handleMarcarPago(r.id)}
+                              >
+                                <CheckCircle className="h-4 w-4 mr-1" />
+                                Pagar
+                              </Button>
+                              {r.tipo === 'Profissional' && (
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => handleEnviarWhatsapp(r.id, r.referencia)}
+                                  className="px-2"
+                                >
+                                  <img src="/whatsapp-logo.png" alt="WhatsApp" className="h-4 w-4" />
+                                </Button>
+                              )}
+                            </>
                           )}
                         </div>
                       </td>
@@ -324,6 +499,13 @@ export const RepassesPage: React.FC = () => {
             </table>
           </div>
         </CardContent>
+        <PaginationControl
+          currentPage={currentPage}
+          totalItems={filtered.length}
+          itemsPerPage={itemsPerPage}
+          onPageChange={setCurrentPage}
+          onItemsPerPageChange={setItemsPerPage}
+        />
       </Card>
     </div>
   )

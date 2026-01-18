@@ -8,7 +8,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { UnidadeCard } from '@/components/unidades/UnidadeCard'
 import { UnidadeForm } from '@/components/unidades/UnidadeForm'
 import { PageLoading } from '@/components/ui/LoadingSpinner'
-import { getUnidades } from '@/services/unidades'
+import { getUnidades, createUnidade, updateUnidade } from '@/services/unidades'
+import { toast } from 'sonner'
 
 // Dados serão carregados do Supabase via serviço
 
@@ -19,7 +20,7 @@ export const UnidadesPage: React.FC = () => {
   const [showEditModal, setShowEditModal] = useState(false)
   const [selectedUnidade, setSelectedUnidade] = useState<any>(null)
 
-  const { data, isLoading, isError, error } = useQuery({
+  const { data, isLoading, isError, error, refetch } = useQuery({
     queryKey: ['unidades', searchTerm],
     queryFn: () => getUnidades(searchTerm),
     staleTime: 60_000,
@@ -37,26 +38,28 @@ export const UnidadesPage: React.FC = () => {
     unidade.responsavel.toLowerCase().includes(searchTerm.toLowerCase())
   )
 
-  const handleCreateUnidade = (data: any) => {
-    const newUnidade = {
-      id: Date.now().toString(),
-      ...data,
-      turmas: [],
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
+  const handleCreateUnidade = async (formData: any) => {
+    try {
+      await createUnidade(formData)
+      toast.success('Unidade criada com sucesso')
+      setShowCreateModal(false)
+      refetch()
+    } catch (e: any) {
+      toast.error('Erro ao criar unidade', { description: e.message })
     }
-    setUnidades([...unidades, newUnidade])
-    setShowCreateModal(false)
   }
 
-  const handleEditUnidade = (data: any) => {
-    setUnidades(unidades.map(u => 
-      u.id === selectedUnidade.id 
-        ? { ...u, ...data, updated_at: new Date().toISOString() }
-        : u
-    ))
-    setShowEditModal(false)
-    setSelectedUnidade(null)
+  const handleEditUnidade = async (formData: any) => {
+    if (!selectedUnidade) return
+    try {
+      await updateUnidade(selectedUnidade.id, formData)
+      toast.success('Unidade atualizada com sucesso')
+      setShowEditModal(false)
+      setSelectedUnidade(null)
+      refetch()
+    } catch (e: any) {
+      toast.error('Erro ao atualizar unidade', { description: e.message })
+    }
   }
 
   const handleDeleteUnidade = (id: string) => {
@@ -220,7 +223,7 @@ export const UnidadesPage: React.FC = () => {
               Nenhuma unidade encontrada
             </h3>
             <p className="text-muted-foreground mb-4">
-              {searchTerm 
+              {searchTerm
                 ? 'Tente alterar os termos de busca'
                 : 'Comece criando sua primeira unidade'
               }

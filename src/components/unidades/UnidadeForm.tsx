@@ -6,10 +6,13 @@ import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from '@/components/ui/Select'
 import { Card, CardContent } from '@/components/ui/Card'
+import { supabase } from '@/services/supabase/client'
+import { MultiSelect } from '@/components/ui/MultiSelect'
 
 const unidadeSchema = z.object({
   nome: z.string().min(2, 'Nome deve ter pelo menos 2 caracteres'),
-  responsavel: z.string().min(2, 'Nome do responsável é obrigatório'),
+  responsavel: z.string().optional(),
+  managerIds: z.array(z.string()).optional(),
   endereco: z.string().min(5, 'Endereço é obrigatório'),
   cidade: z.string().min(2, 'Cidade é obrigatória'),
   estado: z.string().length(2, 'Estado deve ter 2 caracteres'),
@@ -47,9 +50,10 @@ export const UnidadeForm: React.FC<UnidadeFormProps> = ({
     defaultValues: {
       nome: initialData?.nome || '',
       responsavel: initialData?.responsavel || '',
+      managerIds: initialData?.manager_ids || [],
       endereco: initialData?.endereco || '',
       cidade: initialData?.cidade || '',
-      estado: initialData?.estado || 'SP',
+      estado: initialData?.estado || 'GO',
       cep: initialData?.cep || '',
       telefone: initialData?.telefone || '',
       email: initialData?.email || '',
@@ -58,6 +62,20 @@ export const UnidadeForm: React.FC<UnidadeFormProps> = ({
       status: initialData?.status || 'Ativa',
     },
   })
+
+  const [managerOptions, setManagerOptions] = React.useState<{ label: string; value: string }[]>([])
+
+  React.useEffect(() => {
+    supabase
+      .from('professionals')
+      .select('id, name')
+      .eq('status', 'Ativo')
+      .then(({ data }) => {
+        if (data) {
+          setManagerOptions(data.map((p: any) => ({ label: p.name, value: p.id })))
+        }
+      })
+  }, [])
 
   const tipoRepasse = watch('tipoRepasse')
 
@@ -101,7 +119,7 @@ export const UnidadeForm: React.FC<UnidadeFormProps> = ({
       <Card>
         <CardContent className="p-6 space-y-4">
           <h3 className="text-lg font-semibold">Informações Básicas</h3>
-          
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <Input
               label="Nome da Unidade"
@@ -111,13 +129,19 @@ export const UnidadeForm: React.FC<UnidadeFormProps> = ({
               {...register('nome')}
             />
 
-            <Input
-              label="Responsável"
-              placeholder="Nome do responsável"
-              error={errors.responsavel?.message}
-              required
-              {...register('responsavel')}
-            />
+            <div className="space-y-2">
+              <MultiSelect
+                label="Responsáveis"
+                placeholder="Selecione os responsáveis"
+                options={managerOptions}
+                values={watch('managerIds') || []}
+                onChange={(vals) => setValue('managerIds', vals)}
+              />
+            </div>
+            {/* Mantemos o campo 'responsavel' invisível ou sincronizado se necessário para compatibilidade, 
+                mas a UI agora usa MultiSelect. 
+                Se o backend esperar 'manager_ids', devemos garantir que o form envie isso.
+             */}
           </div>
 
           <Input
@@ -142,13 +166,33 @@ export const UnidadeForm: React.FC<UnidadeFormProps> = ({
                 <SelectValue placeholder="Selecione o estado" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="SP">São Paulo</SelectItem>
-                <SelectItem value="RJ">Rio de Janeiro</SelectItem>
-                <SelectItem value="MG">Minas Gerais</SelectItem>
+                <SelectItem value="AC">Acre</SelectItem>
+                <SelectItem value="AL">Alagoas</SelectItem>
+                <SelectItem value="AP">Amapá</SelectItem>
+                <SelectItem value="AM">Amazonas</SelectItem>
+                <SelectItem value="BA">Bahia</SelectItem>
+                <SelectItem value="CE">Ceará</SelectItem>
+                <SelectItem value="DF">Distrito Federal</SelectItem>
                 <SelectItem value="ES">Espírito Santo</SelectItem>
+                <SelectItem value="GO">Goiás</SelectItem>
+                <SelectItem value="MA">Maranhão</SelectItem>
+                <SelectItem value="MT">Mato Grosso</SelectItem>
+                <SelectItem value="MS">Mato Grosso do Sul</SelectItem>
+                <SelectItem value="MG">Minas Gerais</SelectItem>
+                <SelectItem value="PA">Pará</SelectItem>
+                <SelectItem value="PB">Paraíba</SelectItem>
                 <SelectItem value="PR">Paraná</SelectItem>
-                <SelectItem value="SC">Santa Catarina</SelectItem>
+                <SelectItem value="PE">Pernambuco</SelectItem>
+                <SelectItem value="PI">Piauí</SelectItem>
+                <SelectItem value="RJ">Rio de Janeiro</SelectItem>
+                <SelectItem value="RN">Rio Grande do Norte</SelectItem>
                 <SelectItem value="RS">Rio Grande do Sul</SelectItem>
+                <SelectItem value="RO">Rondônia</SelectItem>
+                <SelectItem value="RR">Roraima</SelectItem>
+                <SelectItem value="SC">Santa Catarina</SelectItem>
+                <SelectItem value="SP">São Paulo</SelectItem>
+                <SelectItem value="SE">Sergipe</SelectItem>
+                <SelectItem value="TO">Tocantins</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -188,7 +232,7 @@ export const UnidadeForm: React.FC<UnidadeFormProps> = ({
       <Card>
         <CardContent className="p-6 space-y-4">
           <h3 className="text-lg font-semibold">Informações Financeiras</h3>
-          
+
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <Select value={tipoRepasse} onValueChange={handleTipoRepasseChange}>
               <SelectTrigger label="Tipo de Repasse" required error={!!errors.tipoRepasse?.message}>
@@ -246,6 +290,6 @@ export const UnidadeForm: React.FC<UnidadeFormProps> = ({
           )}
         </Button>
       </div>
-    </form>
+    </form >
   )
 }

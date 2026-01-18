@@ -5,7 +5,8 @@ import { Input } from '@/components/ui/Input'
 import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from '@/components/ui/Select'
 import { StatusBadge } from '@/components/ui/Badge'
 import { MetricCard } from '@/components/dashboard/MetricCard'
-import { Wallet, CheckCircle } from 'lucide-react'
+import { Wallet, CheckCircle, Eye } from 'lucide-react'
+import { PaginationControl } from '@/components/ui/PaginationControl'
 import { formatCurrency, formatDate } from '@/lib/utils'
 import { toast } from 'sonner'
 import { supabase } from '@/services/supabase/client'
@@ -19,6 +20,7 @@ type DespesaItem = {
   valor: number
   vencimento: string
   status: 'Pendente' | 'Pago' | 'Vencido' | 'Atrasado' | 'Cancelado'
+  receipt_url?: string
 }
 
 const initialData: DespesaItem[] = []
@@ -51,6 +53,19 @@ export const DespesasPage: React.FC = () => {
       return matchesSearch && matchesMes && matchesStatus && matchesTipo
     })
   }, [despesas, searchFornecedor, mes, status, tipo])
+
+  const [currentPage, setCurrentPage] = React.useState(1)
+  const [itemsPerPage, setItemsPerPage] = React.useState(25)
+
+  React.useEffect(() => {
+    setCurrentPage(1)
+  }, [searchFornecedor, mes, status, tipo])
+
+  const paginatedDespesas = React.useMemo(() => {
+    const start = (currentPage - 1) * itemsPerPage
+    const end = start + itemsPerPage
+    return filtered.slice(start, end)
+  }, [filtered, currentPage, itemsPerPage])
 
   const totalMes = React.useMemo(() => filtered.reduce((acc, d) => acc + d.valor, 0), [filtered])
   const totalPendentes = React.useMemo(() => filtered.filter(d => d.status === 'Pendente').reduce((acc, d) => acc + d.valor, 0), [filtered])
@@ -90,6 +105,7 @@ export const DespesasPage: React.FC = () => {
         valor: Number(row.amount || 0),
         vencimento: row.expense_date,
         status: mapStatus(String(row.status || 'Aberta')),
+        receipt_url: row.receipt_url
       }))
       setDespesas(ui)
     } finally {
@@ -318,7 +334,7 @@ export const DespesasPage: React.FC = () => {
                     </td>
                   </tr>
                 ) : (
-                  filtered.map((d) => (
+                  paginatedDespesas.map((d) => (
                     <tr key={d.id} className="border-t border-border">
                       <td className="px-4 py-3">{d.fornecedor}</td>
                       <td className="px-4 py-3">{d.tipo}</td>
@@ -329,15 +345,27 @@ export const DespesasPage: React.FC = () => {
                       </td>
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-2">
-                          <Button
-                            variant="success"
-                            size="sm"
-                            disabled={d.status === 'Pago'}
-                            onClick={() => handleMarcarPago(d.id)}
-                          >
-                            <CheckCircle className="h-4 w-4 mr-1" />
-                            Marcar pago
-                          </Button>
+                          {['Paga', 'Pago'].includes(d.status) ? (
+                            <span title={d.receipt_url ? "Ver Comprovante" : "Despesa sem comprovante Anexo"}>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => d.receipt_url && window.open(d.receipt_url, '_blank')}
+                                disabled={!d.receipt_url}
+                              >
+                                <Eye className={`h-4 w-4 ${d.receipt_url ? "text-blue-600" : "text-muted-foreground"}`} />
+                              </Button>
+                            </span>
+                          ) : (
+                            <Button
+                              variant="success"
+                              size="sm"
+                              onClick={() => handleMarcarPago(d.id)}
+                            >
+                              <CheckCircle className="h-4 w-4 mr-1" />
+                              Marcar pago
+                            </Button>
+                          )}
                         </div>
                       </td>
                     </tr>
@@ -347,6 +375,13 @@ export const DespesasPage: React.FC = () => {
             </table>
           </div>
         </CardContent>
+        <PaginationControl
+          currentPage={currentPage}
+          totalItems={filtered.length}
+          itemsPerPage={itemsPerPage}
+          onPageChange={setCurrentPage}
+          onItemsPerPageChange={setItemsPerPage}
+        />
       </Card>
     </div>
   )

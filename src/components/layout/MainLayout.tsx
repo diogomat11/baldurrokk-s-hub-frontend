@@ -8,14 +8,14 @@ export const MainLayout: React.FC = () => {
     <div className="min-h-screen bg-app flex">
       {/* Sidebar */}
       <Sidebar />
-      
+
       {/* Conteúdo principal */}
       <div className="flex-1 flex flex-col">
         {/* Topbar */}
         <Topbar />
-        
+
         {/* Área de conteúdo */}
-        <main className="flex-1 p-6 overflow-auto">
+        <main className="flex-1 p-6">
           <Outlet />
         </main>
       </div>

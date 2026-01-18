@@ -34,6 +34,7 @@ export interface Unidade {
   created_at: string;
   updated_at: string;
   turmas?: Turma[];
+  managerIds?: string[];
 }
 
 export type TipoRepasse = 'Percentual' | 'Valor Fixo';
@@ -54,6 +55,8 @@ export interface Profissional {
   status: StatusProfissional;
   created_at: string;
   updated_at: string;
+  repass_type?: 'Fixo' | 'Percentual';
+  repass_value?: number;
 }
 
 export type CargoProfissional = 'Professor' | 'Coordenador' | 'Administrador' | 'Recepcionista';

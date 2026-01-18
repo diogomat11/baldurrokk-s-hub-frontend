@@ -1,14 +1,14 @@
 import React, { useEffect, useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
-import { 
-  Home, 
-  Globe, 
-  Building2, 
-  Users, 
-  GraduationCap, 
+import {
+  Home,
+  Globe,
+  Building2,
+  Users,
+  GraduationCap,
   Calendar,
-  Wallet, 
-  FileBarChart, 
+  Wallet,
+  FileBarChart,
   Settings,
   ChevronDown,
   ChevronRight,
@@ -120,20 +120,20 @@ export const Sidebar: React.FC = () => {
   }, [isCollapsed])
 
   const toggleExpanded = (label: string) => {
-    setExpandedItems(prev => 
-      prev.includes(label) 
+    setExpandedItems(prev =>
+      prev.includes(label)
         ? prev.filter(item => item !== label)
         : [...prev, label]
     )
   }
 
-  const filteredNavItems = navigationItems.filter(item => 
+  const filteredNavItems = navigationItems.filter(item =>
     !item.roles || item.roles.some(role => checkRole([role as any]))
   )
 
   const isActive = (path: string) => {
-    return location.pathname === path || 
-           (path !== '/dashboard' && location.pathname.startsWith(path))
+    return location.pathname === path ||
+      (path !== '/dashboard' && location.pathname.startsWith(path))
   }
 
   const isChildActive = (children?: NavItem[]) => {
@@ -144,16 +144,16 @@ export const Sidebar: React.FC = () => {
     <>
       {/* Overlay para mobile */}
       {!isCollapsed && (
-        <div 
+        <div
           className="fixed inset-0 bg-black/50 z-40 lg:hidden"
           onClick={() => setIsCollapsed(true)}
         />
       )}
-      
+
       {/* Sidebar */}
       <aside
         className={cn(
-          "fixed left-0 top-0 z-50 h-screen bg-primary text-primary-foreground transition-all duration-300 ease-in-out lg:relative lg:translate-x-0",
+          "fixed left-0 top-0 z-50 h-screen bg-primary text-primary-foreground transition-all duration-300 ease-in-out lg:sticky lg:top-0",
           isCollapsed ? "-translate-x-full lg:w-16" : "translate-x-0 lg:w-64"
         )}
       >
@@ -161,9 +161,9 @@ export const Sidebar: React.FC = () => {
           {/* Header */}
           <div className="flex items-center justify-center p-4 border-b border-primary-foreground/10">
             <div className="flex items-center space-x-4">
-              <img 
-                src="/coelho-logo.webp" 
-                alt="Coelho Futebol e Futsal" 
+              <img
+                src="/coelho-logo.webp"
+                alt="Coelho Futebol e Futsal"
                 className="h-16 w-16 rounded-2xl shadow-lg"
               />
               {!isCollapsed && (
@@ -172,7 +172,7 @@ export const Sidebar: React.FC = () => {
                 </div>
               )}
             </div>
-            
+
             <button
               onClick={() => setIsCollapsed(!isCollapsed)}
               className="p-2 rounded-lg hover:bg-primary-foreground/10 lg:hidden"
@@ -194,7 +194,7 @@ export const Sidebar: React.FC = () => {
                           "w-full flex items-center justify-between px-3 py-2 rounded-xl text-sm font-medium transition-colors",
                           "hover:bg-primary-foreground/10",
                           (isChildActive(item.children) || expandedItems.includes(item.label)) &&
-                            "bg-primary-foreground/20"
+                          "bg-primary-foreground/20"
                         )}
                       >
                         <div className="flex items-center space-x-3">
@@ -211,7 +211,7 @@ export const Sidebar: React.FC = () => {
                           </div>
                         )}
                       </button>
-                      
+
                       {/* Children */}
                       {!isCollapsed && expandedItems.includes(item.label) && (
                         <ul className="mt-2 space-y-1 pl-8">
