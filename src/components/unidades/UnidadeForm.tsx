@@ -70,7 +70,7 @@ export const UnidadeForm: React.FC<UnidadeFormProps> = ({
       .from('professionals')
       .select('id, name')
       .eq('status', 'Ativo')
-      .then(({ data }) => {
+      .then(({ data }: any) => {
         if (data) {
           setManagerOptions(data.map((p: any) => ({ label: p.name, value: p.id })))
         }

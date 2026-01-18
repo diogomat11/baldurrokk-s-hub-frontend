@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/Input'
 import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from '@/components/ui/Select'
 import { StatusBadge } from '@/components/ui/Badge'
 import { MetricCard } from '@/components/dashboard/MetricCard'
-import { Receipt, CheckCircle, MessageSquare, Eye } from 'lucide-react'
+import { Receipt, CheckCircle, Eye } from 'lucide-react'
 import { formatCurrency, formatDate } from '@/lib/utils'
 import { toast } from 'sonner'
 import { supabase } from '@/services/supabase/client'
@@ -105,7 +105,7 @@ export const MensalidadesPage: React.FC = () => {
         const fileExt = paymentProof.name.split('.').pop()?.replace(/[^a-z0-9]/gi, '') || 'bin'
         const fileName = `${alunoName}-${mesRef}-${Date.now()}.${fileExt}`
 
-        const { data: uploadData, error: uploadError } = await supabase.storage
+        const { error: uploadError } = await supabase.storage
           .from('receipts')
           .upload(`${fileName}`, paymentProof)
 
@@ -116,7 +116,7 @@ export const MensalidadesPage: React.FC = () => {
       }
 
       await markInvoicePaid(selectedInvoice, {
-        payment_method: paymentForm.payment_method,
+        payment_method: paymentForm.payment_method as any,
         paid_at: paymentForm.paid_at,
         receipt_url: proofUrl,
         professional_id: paymentForm.payment_method === 'Dinheiro' ? paymentForm.professional_id : null,
@@ -153,7 +153,7 @@ export const MensalidadesPage: React.FC = () => {
       if (invErr || !inv) throw new Error('Fatura não encontrada')
 
       // 2. Busca dados do aluno (turma)
-      const { data: stu, error: stuErr } = await supabase
+      const { data: stu } = await supabase
         .from('students')
         .select('class_id')
         .eq('id', inv.student_id)
@@ -180,7 +180,7 @@ export const MensalidadesPage: React.FC = () => {
 
       if (profErr) throw profErr
 
-      const filteredProfs = (profs || []).filter(p => {
+      const filteredProfs = (profs || []).filter((p: any) => {
         const isTeacher = teacherIds.includes(p.id)
         const isManager = p.role_position === 'Gestor' && p.unit_ids && p.unit_ids.includes(inv.unit_id)
         return isTeacher || isManager
